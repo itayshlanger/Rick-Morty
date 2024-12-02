@@ -26,8 +26,9 @@ deploy:
   script:
     - apt-get update && apt-get install -y curl apt-transport-https
     - curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+    - ls -lh minikube  # Verify the file exists
     - chmod +x minikube
-    - install minikube /usr/local/bin/
+    - install minikube /usr/local/bin/minikube
     - minikube start --driver=docker
     - minikube status
     - curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
@@ -39,10 +40,8 @@ test:
   stage: test
   image: curlimages/curl:latest
   script:
-    - |
-      APP_IP=$(minikube ip)
-      echo "App IP: $APP_IP"
-      curl -f http://$APP_IP/healthcheck || exit 1
-      curl -f http://$APP_IP/characters || exit 1
-
-
+  |
+    - APP_IP=$(minikube ip)
+    - echo "App IP: $APP_IP"
+    - curl -f http://$APP_IP/healthcheck || exit 1
+    - curl -f http://$APP_IP/characters || exit 1
