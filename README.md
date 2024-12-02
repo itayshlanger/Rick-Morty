@@ -8,7 +8,7 @@ This project interacts with the Rick and Morty API to fetch character data and e
    - Species: Human
    - Status: Alive
    - Origin: Earth
-2. Saves the data to a CSV file.
+2. Saves the data to a CSV file (Example located at /app/rick_and_morty_characters.csv).
 3. Exposes a REST API to:
    - /characters: Returns the data as JSON.
    - /healthcheck: Verifies application health.
@@ -38,6 +38,8 @@ This project interacts with the Rick and Morty API to fetch character data and e
 ## Setup and Usage
 
 ### 1. Docker Deployment
+- App files located at /app
+
 - Build the Docker image:
  ```
  docker build -t rick-and-morty-api .
@@ -78,12 +80,17 @@ This project interacts with the Rick and Morty API to fetch character data and e
     127.0.0.1 rick-and-morty.local
     ```
     ( Can be changed at yamls/ingress.yaml )
-4. Access with minikube tunnel
+
+5. Access with minikube tunnel
     ```
     minikube tunnel
     ```
-    http://<your-host>/<desired-api-endpoint>
+    
+    Test at -
 
+    ```
+    http://<your-host>/<desired-api-endpoint>
+    ```
 
 ### 3. Helm Deployment
 - Helm chart is located in the rick-and-morty-api/ directory.
