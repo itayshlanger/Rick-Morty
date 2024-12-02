@@ -13,20 +13,20 @@ build:
   services:
     - docker:dind
   script:
-    - cd app
-    - docker build -t $IMAGE_TAG .
+    - docker build -t $IMAGE_TAG /app/.
     - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
     - docker push $IMAGE_TAG
 
 deploy:
   stage: deploy
-  image: google/cloud-sdk:latest
+  image: docker:latest
   services:
     - docker:dind
   script:
+    - service docker start
+    - sleep 10  # Give Docker some time to start
     - apt-get update && apt-get install -y curl apt-transport-https
     - curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
-    - ls -lh minikube  # Verify the file exists
     - chmod +x minikube
     - install minikube /usr/local/bin/minikube
     - minikube start --driver=docker
@@ -45,3 +45,4 @@ test:
       echo "App IP: $APP_IP"
       curl -f http://$APP_IP/healthcheck || exit 1
       curl -f http://$APP_IP/characters || exit 1
+
