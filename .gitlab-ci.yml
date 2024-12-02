@@ -3,6 +3,7 @@ stages:
   - deploy
   - test
 
+
 variables:
   IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
   KUBECONFIG: $CI_PROJECT_DIR/.kube/config
