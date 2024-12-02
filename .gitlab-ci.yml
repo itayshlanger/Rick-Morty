@@ -13,7 +13,7 @@ build:
   services:
     - docker:dind
   script:
-    - docker build -t $IMAGE_TAG /app/.
+    - docker build -t $IMAGE_TAG app/.
     - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
     - docker push $IMAGE_TAG
 
