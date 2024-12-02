@@ -22,9 +22,7 @@ deploy:
   stage: deploy
   image: bitnami/kubectl:latest
   before_script:
-    - apk add --no-cache bash  # Install bash if needed
     - minikube start --driver=docker
-    - kubectl config view --raw > $KUBECONFIG
   script:
     - helm upgrade --install rick-and-morty ./rick-and-morty-api --set image.repository=$CI_REGISTRY_IMAGE --set image.tag=$CI_COMMIT_SHA
 
