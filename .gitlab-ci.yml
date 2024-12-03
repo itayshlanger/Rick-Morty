@@ -4,23 +4,30 @@ stages:
   - test
 
 variables:
-  DOCKER_IMAGE: rick-and-morty-api
-  IMAGE_TAG: $CI_COMMIT_SHA # Unique tag for each commit
+  IMAGE_TAG: rick-and-morty-api:$CI_COMMIT_SHA # Unique tag for each commit
 
 before_script:
+  - minikube start
   - eval $(minikube docker-env)
 
-build_image:
+build:
   stage: build
+  image: docker:latest
+  services:
+    - docker:dind
   script:
-    # Build the Docker image inside Minikube's Docker environment
-    - docker build -t $DOCKER_IMAGE:$IMAGE_TAG ./app
+    - docker build -t $IMAGE_TAG /app/.
+    - docker build -t $IMAGE_TAG app/.
+    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+    - docker push $IMAGE_TAG
+
 
 deploy_to_cluster:
   stage: deploy
   script:
-    - 'sed -i "s|image: .*|image: $DOCKER_IMAGE:$IMAGE_TAG|g" k8s/deployment.yaml'
-    - kubectl apply -f k8s/deployment.yaml
+
+    - 'sed -i "s|image: .*|image: $DOCKER_IMAGE:$IMAGE_TAG|g" yamls/deployment.yaml'
+    - kubectl apply -f yamls/.
 
 test_application:
   stage: test
