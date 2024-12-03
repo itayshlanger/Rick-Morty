@@ -4,45 +4,28 @@ stages:
   - test
 
 variables:
-  IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
-  KUBECONFIG: $CI_PROJECT_DIR/.kube/config
+  DOCKER_IMAGE: rick-and-morty-api
+  IMAGE_TAG: $CI_COMMIT_SHA # Unique tag for each commit
 
-build:
+before_script:
+  - eval $(minikube docker-env)
+
+build_image:
   stage: build
-  image: docker:latest
-  services:
-    - docker:dind
   script:
-    - docker build -t $IMAGE_TAG app/.
-    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
-    - docker push $IMAGE_TAG
+    # Build the Docker image inside Minikube's Docker environment
+    - docker build -t $DOCKER_IMAGE:$IMAGE_TAG ./app
 
-deploy:
+deploy_to_cluster:
   stage: deploy
-  image: docker:latest
-  services:
-    - docker:dind
   script:
-    - service docker start
-    - sleep 10  # Give Docker some time to start
-    - apt-get update && apt-get install -y curl apt-transport-https
-    - curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
-    - chmod +x minikube
-    - install minikube /usr/local/bin/minikube
-    - minikube start --driver=docker
-    - minikube status
-    - curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
-    - helm repo add stable https://charts.helm.sh/stable
-    - helm repo update
-    - helm upgrade --install rick-and-morty ./rick-and-morty-api --set image.repository=$CI_REGISTRY_IMAGE --set image.tag=$CI_COMMIT_SHA
+    - 'sed -i "s|image: .*|image: $DOCKER_IMAGE:$IMAGE_TAG|g" k8s/deployment.yaml'
+    - kubectl apply -f k8s/deployment.yaml
 
-test:
+test_application:
   stage: test
-  image: curlimages/curl:latest
   script:
-    - |
-      APP_IP=$(minikube ip)
-      echo "App IP: $APP_IP"
-      curl -f http://$APP_IP/healthcheck || exit 1
-      curl -f http://$APP_IP/characters || exit 1
-
+    # Wait for the application to be ready
+    - kubectl rollout status deployment/rick-and-morty-api
+    - EXTERNAL_IP=$(kubectl get svc rick-and-morty-api -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+    - curl -f http://$EXTERNAL_IP/healthcheack || exit 1
