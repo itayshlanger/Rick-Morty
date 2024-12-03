@@ -7,6 +7,7 @@ variables:
   DOCKER_IMAGE: rick-and-morty-api
   IMAGE_TAG: $CI_COMMIT_SHA # Unique tag for each commit
 
+
 before_script:
   - eval $(minikube docker-env)
 
