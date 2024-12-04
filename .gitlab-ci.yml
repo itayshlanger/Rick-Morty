@@ -17,6 +17,8 @@ build:
     - docker build -t $IMAGE_TAG app/.
     - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
     - docker push $IMAGE_TAG
+  tags:
+    - rick-and-morty
 
 
 deploy_to_cluster:
@@ -25,6 +27,8 @@ deploy_to_cluster:
 
     - 'sed -i "s|image: .*|image: $DOCKER_IMAGE:$IMAGE_TAG|g" yamls/deployment.yaml'
     - kubectl apply -f yamls/.
+  tags:
+    - rick-and-morty
 
 test_application:
   stage: test
@@ -33,3 +37,5 @@ test_application:
     - kubectl rollout status deployment/rick-and-morty-api
     - EXTERNAL_IP=$(kubectl get svc rick-and-morty-api -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
     - curl -f http://$EXTERNAL_IP/healthcheack || exit 1
+  tags:
+    - rick-and-morty
