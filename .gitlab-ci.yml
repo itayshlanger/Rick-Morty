@@ -4,7 +4,7 @@ stages:
   - test
 
 variables:
-  IMAGE_TAG: itayshlanger/rick-and-morty-api:$CI_COMMIT_SHA # Unique tag for each commit
+  IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA # Unique tag for each commit
 
 build:
   stage: build
