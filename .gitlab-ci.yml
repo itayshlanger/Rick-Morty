@@ -27,7 +27,7 @@ deploy_to_cluster:
     # Load Docker image into Minikube
     - minikube image load $IMAGE_TAG
     # Update the deployment YAML to use the local image
-    - sed -i "s|image: .*|image: ${IMAGE_TAG}|g" yamls/deployment.yaml
+    - 'sed -i "s|image: .*|image: ${IMAGE_TAG}|g" yamls/deployment.yaml'
     # Apply Kubernetes manifests
     - kubectl apply -f yamls/.
     # Verify the deployment rollout
