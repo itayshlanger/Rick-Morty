@@ -21,7 +21,7 @@ deploy_to_cluster:
   stage: deploy
   image: bitnami/kubectl:latest
   script:
-    - apt-get update && apt-get install -y curl wget
+    - apt-get update && apt-get install -y curl 
     - wget https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
     - mv minikube-linux-amd64 /usr/local/bin/minikube
     - chmod +x /usr/local/bin/minikube
