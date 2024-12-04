@@ -9,16 +9,14 @@ variables:
 build:
   stage: build
   image: docker:latest
-  services:
-    - docker:dind
-  variables:
-    DOCKER_HOST: tcp://docker:2375  # Use the Docker-in-Docker service
-    DOCKER_TLS_CERTDIR: ""         # Disable TLS for simplicity (secure environments only)
   script:
-    - docker info  # Verify Docker daemon is accessible
+    - eval $(minikube docker-env)  
+    - docker info
     - docker build -t $IMAGE_TAG app/.
-    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
-    - docker push $IMAGE_TAG
+    - docker save $IMAGE_TAG | gzip > image.tar.gz
+  artifacts:
+    paths:
+      - image.tar.gz
   tags:
     - rick-and-morty
 
