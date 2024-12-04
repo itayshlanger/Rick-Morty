@@ -21,18 +21,19 @@ deploy_to_cluster:
   stage: deploy
   image: bitnami/kubectl:latest
   script:
-    # Load Docker image into Minikube
+    - apt-get update && apt-get install -y curl wget
+    - wget https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+    - mv minikube-linux-amd64 /usr/local/bin/minikube
+    - chmod +x /usr/local/bin/minikube
     - minikube image load $IMAGE_TAG
-    # Update the deployment YAML to use the local image
     - 'sed -i "s|image: .*|image: ${IMAGE_TAG}|g" yamls/deployment.yaml'
-    # Apply Kubernetes manifests
     - kubectl apply -f yamls/.
-    # Verify the deployment rollout
     - kubectl rollout status deployment/rick-and-morty-api
   dependencies:
     - build
   tags:
     - rick-and-morty
+
 
 test_application:
   stage: test
