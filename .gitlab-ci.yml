@@ -1,12 +1,10 @@
-stages:
+stages: 
   - build
   - deploy
   - test
 
-
 variables:
   IMAGE_TAG: rick-and-morty-api:$CI_COMMIT_SHA # Unique tag for each commit
-
 
 build:
   stage: build
@@ -15,27 +13,39 @@ build:
     - docker:dind
   script:
     - docker build -t $IMAGE_TAG app/.
-    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
-    - docker push $IMAGE_TAG
+    - docker save $IMAGE_TAG | gzip > image.tar.gz # Save the image for Minikube
+  artifacts:
+    paths:
+      - image.tar.gz
   tags:
     - rick-and-morty
 
-
 deploy_to_cluster:
   stage: deploy
+  image: bitnami/kubectl:latest
   script:
-
-    - 'sed -i "s|image: .*|image: $DOCKER_IMAGE:$IMAGE_TAG|g" yamls/deployment.yaml'
+    # Load Docker image into Minikube
+    - minikube image load $IMAGE_TAG
+    # Update the deployment YAML to use the local image
+    - sed -i "s|image: .*|image: ${IMAGE_TAG}|g" yamls/deployment.yaml
+    # Apply Kubernetes manifests
     - kubectl apply -f yamls/.
+    # Verify the deployment rollout
+    - kubectl rollout status deployment/rick-and-morty-api
+  dependencies:
+    - build
   tags:
     - rick-and-morty
 
 test_application:
   stage: test
+  image: curlimages/curl:latest
   script:
-    # Wait for the application to be ready
-    - kubectl rollout status deployment/rick-and-morty-api
-    - EXTERNAL_IP=$(kubectl get svc rick-and-morty-api -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-    - curl -f http://$EXTERNAL_IP/healthcheack || exit 1
+    # Wait for the service to have an external IP
+    - for i in {1..10}; do EXTERNAL_IP=$(kubectl get svc rick-and-morty-api -o jsonpath='{.status.loadBalancer.ingress[0].ip}'); [ -n "$EXTERNAL_IP" ] && break || sleep 5; done
+    # Test the application health endpoint
+    - curl -f http://$EXTERNAL_IP/healthcheck || exit 1
+  dependencies:
+    - deploy_to_cluster
   tags:
     - rick-and-morty
