@@ -37,6 +37,7 @@ test_application:
   image: bitnami/kubectl:latest  
   before_script:
     - export KUBECONFIG=$KUBECONFIG
+    - mkdir -p /var/lib/apt/lists/partial
     - apt-get update && apt-get install -y curl
   tags:
     - rick-and-morty
