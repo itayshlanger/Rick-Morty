@@ -22,6 +22,8 @@ deploy_to_cluster:
   image: bitnami/kubectl:latest
   before_script:
     - export KUBECONFIG=$KUBECONFIG  # Ensure the Kubernetes config is used
+  tags: 
+    - rick-and-morty
   script:
     - kubectl config use-context minikube  # Use the Minikube context
     - kubectl get nodes  # Verify connection to the cluster
@@ -35,6 +37,8 @@ deploy_to_cluster:
 test_application:
   stage: test
   image: curlimages/curl:latest
+  tags: 
+    - rick-and-morty
   script:
     - |
       EXTERNAL_IP=""
