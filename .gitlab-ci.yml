@@ -24,8 +24,6 @@ deploy_to_cluster:
   tags:
     - rick-and-morty
   script:
-    - kubectl config use-context your-cluster-context  # Use the context of your Kubernetes cluster
-    - kubectl get nodes  # Verify connection to the cluster
     - 'sed -i "s|image: .*|image: ${DOCKER_HUB_USERNAME}/rick-and-morty:$CI_COMMIT_SHA|g" yamls/deployment.yaml'
     - kubectl apply -f yamls/
     - kubectl rollout status deployment/rick-and-morty-api
