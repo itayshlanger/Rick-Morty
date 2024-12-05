@@ -1,10 +1,11 @@
-stages: 
+stages:
   - build
   - deploy
   - test
 
 variables:
-  IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA # Unique tag for each commit
+  IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+  KUBECONFIG: $HOME/.kube/config 
 
 build:
   stage: build
@@ -16,34 +17,32 @@ build:
     - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
     - docker push $IMAGE_TAG
 
-
 deploy_to_cluster:
   stage: deploy
   image: bitnami/kubectl:latest
+  before_script:
+    - export KUBECONFIG=$KUBECONFIG  # Ensure the Kubernetes config is used
   script:
-    - apt-get update && apt-get install -y curl 
-    - wget https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
-    - mv minikube-linux-amd64 /usr/local/bin/minikube
-    - chmod +x /usr/local/bin/minikube
+    - kubectl config use-context minikube  # Use the Minikube context
+    - kubectl get nodes  # Verify connection to the cluster
     - minikube image load $IMAGE_TAG
     - 'sed -i "s|image: .*|image: ${IMAGE_TAG}|g" yamls/deployment.yaml'
-    - kubectl apply -f yamls/.
+    - kubectl apply -f yamls/
     - kubectl rollout status deployment/rick-and-morty-api
   dependencies:
     - build
-  tags:
-    - rick-and-morty
-
 
 test_application:
   stage: test
   image: curlimages/curl:latest
   script:
-    # Wait for the service to have an external IP
-    - for i in {1..10}; do EXTERNAL_IP=$(kubectl get svc rick-and-morty-api -o jsonpath='{.status.loadBalancer.ingress[0].ip}'); [ -n "$EXTERNAL_IP" ] && break || sleep 5; done
-    # Test the application health endpoint
-    - curl -f http://$EXTERNAL_IP/healthcheck || exit 1
+    - |
+      EXTERNAL_IP=""
+      for i in {1..10}; do
+        EXTERNAL_IP=$(kubectl get svc rick-and-morty-api -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+        [ -n "$EXTERNAL_IP" ] && break || sleep 5
+      done
+      echo "Service External IP: $EXTERNAL_IP"
+      curl -f http://$EXTERNAL_IP/healthcheck || exit 1
   dependencies:
     - deploy_to_cluster
-  tags:
-    - rick-and-morty
