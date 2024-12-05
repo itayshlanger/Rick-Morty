@@ -5,15 +5,13 @@ stages:
   - cleanup
 
 variables:
-  IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
-  KUBECONFIG: $HOME/kube/config  
+  KUBECONFIG: $HOME/kube/config 
 
 build:
   stage: build
   image: docker:latest
   services:
     - docker:dind
-
   script:
     - docker build -t $DOCKER_HUB_USERNAME/rick-and-morty:$CI_COMMIT_SHA app/.
     - echo $DOCKER_HUB_PASSWORD | docker login -u $DOCKER_HUB_USERNAME --password-stdin
@@ -28,7 +26,8 @@ deploy_to_cluster:
     - rick-and-morty
   script:
     - 'sed -i "s|image: .*|image: ${DOCKER_HUB_USERNAME}/rick-and-morty:$CI_COMMIT_SHA|g" yamls/deployment.yaml'
-    - kubectl apply -f yamls/
+    - kubectl apply -f yamls/deployment.yaml
+    - kubectl apply -f yamls/service.yaml
     - kubectl rollout status deployment/rick-and-morty-api
   dependencies:
     - build
@@ -36,13 +35,15 @@ deploy_to_cluster:
 test_application:
   stage: test
   image: bitnami/kubectl:latest  
+  before_script:
+    - export KUBECONFIG=$KUBECONFIG
   tags:
     - rick-and-morty
   script:
-    - minikube tunnel &  
-    - sleep 10  
-    - curl -f http://rick-and-morty.local/healthcheck || exit 1
-    - pkill -f "minikube tunnel"  
+    - kubectl port-forward service/rick-and-morty-api 8080:5000 &  # Forward the service port
+    - sleep 10  # Wait for the port forwarding to establish
+    - curl -f http://localhost:8080/healthcheck || exit 1  # Test the endpoint
+    - pkill -f "kubectl port-forward"  # Close the port forwarding
   dependencies:
     - deploy_to_cluster
 
@@ -50,9 +51,11 @@ cleanup:
   stage: cleanup
   image: bitnami/kubectl:latest
   before_script:
-    - export KUBECONFIG=$KUBECONFIG  
+    - export KUBECONFIG=$KUBECONFIG  # Ensure the Kubernetes config is used
   tags:
     - rick-and-morty
   script:
-    - kubectl delete -f yamls/  
+    - kubectl config use-context your-cluster-context  
+    - kubectl delete -f yamls/service.yaml
+    - kubectl delete -f yamls/deployment.yaml  
   when: always  
