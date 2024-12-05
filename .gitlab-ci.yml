@@ -26,7 +26,6 @@ deploy_to_cluster:
     - rick-and-morty
   script:
     - kubectl get nodes  # Verify connection to the cluster
-    - minikube image load $IMAGE_TAG
     - 'sed -i "s|image: .*|image: ${IMAGE_TAG}|g" yamls/deployment.yaml'
     - kubectl apply -f yamls/
     - kubectl rollout status deployment/rick-and-morty-api
