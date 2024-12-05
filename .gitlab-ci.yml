@@ -2,15 +2,18 @@ stages:
   - build
   - deploy
   - test
+  - cleanup
 
 variables:
-  KUBECONFIG: $HOME/.kube/config
+  IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+  KUBECONFIG: /kube/config  
 
 build:
   stage: build
   image: docker:latest
   services:
     - docker:dind
+
   script:
     - docker build -t $DOCKER_HUB_USERNAME/rick-and-morty:$CI_COMMIT_SHA app/.
     - echo $DOCKER_HUB_PASSWORD | docker login -u $DOCKER_HUB_USERNAME --password-stdin
@@ -32,17 +35,24 @@ deploy_to_cluster:
 
 test_application:
   stage: test
-  image: curlimages/curl:latest
+  image: bitnami/kubectl:latest  
   tags:
     - rick-and-morty
   script:
-    - |
-      EXTERNAL_IP=""
-      for i in {1..10}; do
-        EXTERNAL_IP=$(kubectl get svc rick-and-morty-api -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-        [ -n "$EXTERNAL_IP" ] && break || sleep 5
-      done
-      echo "Service External IP: $EXTERNAL_IP"
-      curl -f http://$EXTERNAL_IP/healthcheck || exit 1
+    - minikube tunnel &  
+    - sleep 10  
+    - curl -f http://rick-and-morty.local/healthcheck || exit 1
+    - pkill -f "minikube tunnel"  
   dependencies:
     - deploy_to_cluster
+
+cleanup:
+  stage: cleanup
+  image: bitnami/kubectl:latest
+  before_script:
+    - export KUBECONFIG=$KUBECONFIG  
+  tags:
+    - rick-and-morty
+  script:
+    - kubectl delete -f yamls/  
+  when: always  
