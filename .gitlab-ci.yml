@@ -4,8 +4,7 @@ stages:
   - test
 
 variables:
-  IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
-  KUBECONFIG: $HOME/.kube/config 
+  KUBECONFIG: $HOME/.kube/config
 
 build:
   stage: build
@@ -13,20 +12,21 @@ build:
   services:
     - docker:dind
   script:
-    - docker build -t $IMAGE_TAG app/.
-    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
-    - docker push $IMAGE_TAG
+    - docker build -t $DOCKER_HUB_USERNAME/rick-and-morty:$CI_COMMIT_SHA app/.
+    - echo $DOCKER_HUB_PASSWORD | docker login -u $DOCKER_HUB_USERNAME --password-stdin
+    - docker push $DOCKER_HUB_USERNAME/rick-and-morty:$CI_COMMIT_SHA
 
 deploy_to_cluster:
   stage: deploy
   image: bitnami/kubectl:latest
   before_script:
     - export KUBECONFIG=$KUBECONFIG  # Ensure the Kubernetes config is used
-  tags: 
+  tags:
     - rick-and-morty
   script:
+    - kubectl config use-context your-cluster-context  # Use the context of your Kubernetes cluster
     - kubectl get nodes  # Verify connection to the cluster
-    - 'sed -i "s|image: .*|image: ${IMAGE_TAG}|g" yamls/deployment.yaml'
+    - 'sed -i "s|image: .*|image: ${DOCKER_HUB_USERNAME}/rick-and-morty:$CI_COMMIT_SHA|g" yamls/deployment.yaml'
     - kubectl apply -f yamls/
     - kubectl rollout status deployment/rick-and-morty-api
   dependencies:
@@ -35,7 +35,7 @@ deploy_to_cluster:
 test_application:
   stage: test
   image: curlimages/curl:latest
-  tags: 
+  tags:
     - rick-and-morty
   script:
     - |
