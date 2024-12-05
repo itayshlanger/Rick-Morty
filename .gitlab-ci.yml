@@ -6,7 +6,7 @@ stages:
 
 variables:
   IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
-  KUBECONFIG: /kube/config  
+  KUBECONFIG: $HOME/kube/config  
 
 build:
   stage: build
