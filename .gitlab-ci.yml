@@ -34,11 +34,9 @@ deploy_to_cluster:
 
 test_application:
   stage: test
-  image: bitnami/kubectl:latest  
+  image: alpine/k8s:1.18.2 
   before_script:
     - export KUBECONFIG=$KUBECONFIG
-    - mkdir -p /var/lib/apt/lists/partial
-    - apt-get update && apt-get install -y curl
   tags:
     - rick-and-morty
   script:
@@ -56,8 +54,7 @@ cleanup:
     - export KUBECONFIG=$KUBECONFIG  # Ensure the Kubernetes config is used
   tags:
     - rick-and-morty
-  script:
-    - kubectl config use-context your-cluster-context  
+  script: 
     - kubectl delete -f yamls/service.yaml
     - kubectl delete -f yamls/deployment.yaml  
   when: always  
