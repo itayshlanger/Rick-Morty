@@ -42,7 +42,9 @@ test_application:
   script:
     - kubectl port-forward service/rick-and-morty-api 8080:5000 &  # Forward the service port
     - sleep 10  # Wait for the port forwarding to establish
-    - curl -f http://localhost:8080/healthcheck || exit 1  # Test the endpoint
+    - curl -s -o response.json http://localhost:8080/healthcheck
+    - cat response.json
+    - jq -e '.status == "healthy"' response.json || exit 1
     - pkill -f "kubectl port-forward"  # Close the port forwarding
   dependencies:
     - deploy_to_cluster
