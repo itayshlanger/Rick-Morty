@@ -25,7 +25,6 @@ deploy_to_cluster:
   tags: 
     - rick-and-morty
   script:
-    - kubectl config use-context minikube  # Use the Minikube context
     - kubectl get nodes  # Verify connection to the cluster
     - minikube image load $IMAGE_TAG
     - 'sed -i "s|image: .*|image: ${IMAGE_TAG}|g" yamls/deployment.yaml'
