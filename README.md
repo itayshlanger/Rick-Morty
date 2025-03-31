@@ -1,7 +1,7 @@
 # Rick and Morty API Application
 
 ## Overview
-This project interacts with the Rick and Morty API to fetch character data and expose it through a Flask based REST API. The project also includes Dockerization, Kubernetes, and a Helm chart for deployment.
+This project was originally designed for GitLab to test and expiriminet with the platform, it interacts with the Rick and Morty API to fetch character data and expose it through a Flask based REST API. The project also includes Dockerization, Kubernetes, and a Helm chart for deployment.
 
 ## Features
 1. Fetches and filters character data based on:
